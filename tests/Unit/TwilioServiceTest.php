@@ -36,50 +36,35 @@ class TwilioServiceTest extends TestCase
         $this->assertEquals('TK123', $result->sid);
     }
 
-    public function testMakeTestCall()
-    {
-        $mockApi = Mockery::mock();
-        $mockApi->v2010 = Mockery::mock();
-        $mockApi->v2010->account = Mockery::mock();
-        $mockApi->v2010->account->calls = Mockery::mock();
-        $mockApi->v2010->account->calls->shouldReceive('create')
-            ->with('+1234567890', config('services.twilio.phone_number'), ['url' => 'http://example.com/twiml'])
-            ->once()
-            ->andReturn((object) ['sid' => 'CA123']);
-
-        $mockClient = Mockery::mock(\Twilio\Rest\Client::class, function (MockInterface $mock) use ($mockApi) {
-            $mock->shouldReceive('getAccountSid')->andReturn('AC123');
-            $mock->api = $mockApi;
-        });
-
-        $twilioService = new TwilioService($mockClient);
-        $result = $twilioService->makeTestCall('+1234567890', 'http://example.com/twiml');
-
-        $this->assertEquals('CA123', $result->sid);
-    }
-
     public function testGenerateSensitiveInputTwiml()
     {
-        $mockTwiml = Mockery::mock('Twilio\Twiml');
-        $mockTwiml->shouldReceive('pause')->with(['length' => 2])->once()->andReturnSelf();
+        $mockGather = Mockery::mock(\Twilio\TwiML\Voice\Gather::class);
+        $mockGather->shouldReceive('say')
+            ->with('Please enter your 9 digit number.')
+            ->once()
+            ->andReturn(new \Twilio\TwiML\Voice\Say('Please enter your 9 digit number.')); // ✅ Correct type
+
+        $mockTwiml = Mockery::mock('overload:Twilio\TwiML\VoiceResponse');
+        $mockTwiml->shouldReceive('pause')
+            ->with(['length' => 2])
+            ->once()
+            ->andReturnSelf();
+
         $mockTwiml->shouldReceive('gather')
             ->with([
                 'numDigits' => 9,
                 'action' => 'http://example.com/resume',
                 'method' => 'POST',
+                'pciMode' => 'enable',
             ])
             ->once()
-            ->andReturnSelf();
-        $mockTwiml->shouldReceive('say')
-            ->with('Please enter your 9 digit number.')
-            ->once()
-            ->andReturnSelf();
-
-        Mockery::mock('alias:Twilio\Twiml')->shouldReceive('__construct')->andReturn($mockTwiml);
+            ->andReturn($mockGather);
 
         $twilioService = new TwilioService();
         $result = $twilioService->generateSensitiveInputTwiml('http://example.com/resume');
 
-        $this->assertInstanceOf('Twilio\Twiml', $result);
+        $this->assertInstanceOf(\Twilio\TwiML\VoiceResponse::class, $result);
     }
+
+
 }

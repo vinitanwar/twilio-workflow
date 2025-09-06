@@ -128,24 +128,33 @@ class TwilioService
     {
         $trunk = $this->client->trunking->v1->trunks($trunkSid);
         $trunk->update([
-            'originationUri' => $originationUri,
-            'recording' => ['mode' => $recordingMode, 'trim' => 'trim-silence'],  // Trim silence for cleaner recordings
-            'voiceUrl' => url('/twilio/byoc-dial'),  // Retain from BYOC
-            'voiceMethod' => 'POST',
+            'friendlyName' => 'Test Origination',
+            'sipUrl' => $originationUri,
+            'priority' => 1,
+            'weight' => 1,
+            'enabled' => true,
         ]);
-        return $trunk;
+
+        $this->client->trunking->v1->trunks($trunkSid)->recording->update([
+            'mode' => $recordingMode,  // e.g., 'always' or 'record-from-ringing'
+            'trim' => 'trim-silence',  // Trim silence for cleaner recordings
+        ]);
+
+        return $this->client->trunking->v1->trunks($trunkSid)->fetch();
     }
 
     // Generate TwiML to pause/resume recording during sensitive input
     public function generateSensitiveInputTwiml($resumeUrl)
     {
-        $response = new VoiceResponse();
+        $response = new Response();
         $response->pause(['length' => 2]);
-        $response->gather([
+        $gather = $response->gather([
             'numDigits' => 9,
             'action' => $resumeUrl,
             'method' => 'POST',
-        ])->say('Please enter your 9 digit number.');
+            'pciMode' => 'enable',  // Redacts sensitive inputs for PCI compliance
+        ]);
+        $gather->say('Please enter your 9 digit number.');
         return $response;
     }
 

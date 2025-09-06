@@ -38,42 +38,16 @@ class TrunkControllerTest extends TestCase
 
     public function testStoreSipTrunk()
     {
-        $mockTrunk = Mockery::mock();
-        $mockTrunk->shouldReceive('update')
-            ->with([
-                'originationUri' => 'sip:pbx.test.com',
-                'recording' => ['mode' => 'always', 'trim' => 'trim-silence'],
-            ])
+        $mockService = Mockery::mock(TwilioService::class);
+        $mockService->shouldReceive('createSipTrunk')
+            ->with('Test Trunk', 'test.sip.twilio.com')
             ->once()
-            ->andReturn((object)['sid' => 'TK123']);
-
-        $mockTrunking = Mockery::mock();
-        $mockTrunking->v1 = Mockery::mock();
-        $mockTrunking->v1->trunks = Mockery::mock();
-        $mockTrunking->v1->trunks->shouldReceive('create')
-            ->with(['friendlyName' => 'Test Trunk', 'domainName' => 'test.sip.twilio.com'])
+            ->andReturn((object) ['sid' => 'TK123']);
+        $mockService->shouldReceive('updateSipTrunk')
+            ->with('TK123', 'sip:pbx.test.com', 'always')
             ->once()
-            ->andReturn((object)['sid' => 'TK123']);
-        $mockTrunking->v1->trunks->shouldReceive('__invoke')
-            ->with('TK123')
-            ->andReturn($mockTrunk);
-
-        $mockClient = Mockery::mock(\Twilio\Rest\Client::class, function (MockInterface $mock) use ($mockTrunking) {
-            $mock->shouldReceive('getAccountSid')->andReturn('AC123');
-            $mock->trunking = $mockTrunking;
-        });
-
-        $mockService = Mockery::mock(TwilioService::class, function (MockInterface $mock) use ($mockClient, $mockTrunk) {
-            $mock->shouldReceive('__construct')->with($mockClient)->once();
-            $mock->shouldReceive('createSipTrunk')
-                ->with('Test Trunk', 'test.sip.twilio.com')
-                ->once()
-                ->andReturn((object)['sid' => 'TK123']);
-            $mock->shouldReceive('updateSipTrunk')
-                ->with('TK123', 'sip:pbx.test.com', 'always')
-                ->once()
-                ->andReturn((object)['sid' => 'TK123']);
-        })->makePartial();
+            ->andReturn((object) ['sid' => 'TK123']);
+        // If testing credentials, add POST data and mock createCredentialList, etc.
 
         $this->app->instance(TwilioService::class, $mockService);
 
