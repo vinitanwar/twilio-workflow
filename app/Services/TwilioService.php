@@ -124,24 +124,33 @@ class TwilioService
 
 
 
-    public function updateSipTrunk($trunkSid, $originationUri, $recordingMode = 'always')
-    {
-        $trunk = $this->client->trunking->v1->trunks($trunkSid);
-        $trunk->update([
-            'friendlyName' => 'Test Origination',
-            'sipUrl' => $originationUri,
-            'priority' => 1,
-            'weight' => 1,
-            'enabled' => true,
-        ]);
+    public function updateSipTrunk($trunkSid, $originationUri)
+{
+    try {
+        // 1. Update friendly name only (trunks don't accept sipUrl directly)
+        $this->client->trunking->v1->trunks($trunkSid)
+            ->update([
+                'friendlyName' => 'Updated SIP Trunk',
+            ]);
 
-        $this->client->trunking->v1->trunks($trunkSid)->recording->update([
-            'mode' => $recordingMode,  // e.g., 'always' or 'record-from-ringing'
-            'trim' => 'trim-silence',  // Trim silence for cleaner recordings
-        ]);
+        // 2. Add origination URI properly
+        $this->client->trunking->v1->trunks($trunkSid)
+            ->originationUrls
+            ->update([
+                'friendlyName' => 'Primary Origination',
+                'sipUrl'       => $originationUri,
+                'priority'     => 0,
+                'weight'       => 10,
+                'enabled'      => true,
+            ]);
 
         return $this->client->trunking->v1->trunks($trunkSid)->fetch();
+    } catch (TwilioException $e) {
+        \Illuminate\Support\Facades\Log::error('Twilio API error: ' . $e->getMessage());
+        throw new \Exception('Failed to update SIP trunk: ' . $e->getMessage());
     }
+}
+
 
     // Generate TwiML to pause/resume recording during sensitive input
     public function generateSensitiveInputTwiml($resumeUrl)

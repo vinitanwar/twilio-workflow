@@ -22,7 +22,7 @@
 
         <div class="pt-4">
             <button type="submit"
-                class="inline-flex justify-center rounded-lg bg-indigo-600 px-4 py-2 text-white shadow hover:bg-indigo-700 transition">
+                class="inline-flex justify-center rounded-lg bg-indigo-600 px-4 py-2 text-black shadow hover:bg-indigo-700 transition">
                 Create BYOC
             </button>
         </div>

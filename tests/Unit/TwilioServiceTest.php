@@ -42,7 +42,7 @@ class TwilioServiceTest extends TestCase
         $mockGather->shouldReceive('say')
             ->with('Please enter your 9 digit number.')
             ->once()
-            ->andReturn(new \Twilio\TwiML\Voice\Say('Please enter your 9 digit number.')); // ✅ Correct type
+            ->andReturn(new \Twilio\TwiML\Voice\Say('Please enter your 9 digit number.'));
 
         $mockTwiml = Mockery::mock('overload:Twilio\TwiML\VoiceResponse');
         $mockTwiml->shouldReceive('pause')

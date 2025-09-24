@@ -38,7 +38,7 @@ Route::get('/trunks/{trunk}/recordings', [TrunkController::class, 'recordings'])
 Route::get('/test-call', function () {
     $twilio = app(\App\Services\TwilioService::class);
     try {
-        $call = $twilio->makeTestCall('+1234567890', 'https://your-ngrok-url/twilio/voice');  // Replace with your number and ngrok URL
+        $call = $twilio->makeTestCall('+1234567890', 'https://your-ngrok-url/twilio/voice');
         return 'Call initiated: ' . $call->sid;
     } catch (\Exception $e) {
         return 'Error: ' . $e->getMessage();
@@ -54,9 +54,9 @@ Route::get('/test-create-trunk', function () {
     } catch (\Exception $e) {
         return 'Error: ' . $e->getMessage();
     }
-})->middleware('auth');  // Protect with auth if needed
+})->middleware('auth');
 
-// New: List trunks
+
 Route::get('/list-trunks', function () {
     $twilio = app(\App\Services\TwilioService::class);
     $trunks = $twilio->listTrunks();
